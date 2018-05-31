@@ -23,4 +23,34 @@ def DisplayFractal(a, fmt='jpeg'):
 
 sess = tf.InteractiveSession()
                
-                        
+# Use NumPy to create a 2D array of complex numbers
+
+Y, X = np.mgrid[-1.3:1.3:0.005, -2:1:0.005]
+Z = X+1j*Y
+
+xs = tf.constant(Z.astype(np.complex64))
+zs = tf.Variable(xs)
+ns = tf.Variable(tf.zeros_like(xs, tf.float32))
+
+tf.global_variables_initializer().run()
+
+# Compute the new values of z: z^2 + x
+zs_ = zs*zs + xs
+
+# Have we diverged with this new value?
+not_diverged = tf.abs(zs_) < 4
+
+# Operation to update the zs and the iteration count.
+#
+# Note: We keep computing zs after they diverge! This
+#       is very wasteful! There are better, if a little
+#       less simple, ways to do this.
+#
+step = tf.group(
+  zs.assign(zs_),
+  ns.assign_add(tf.cast(not_diverged, tf.float32))
+  )
+
+for i in range(200): step.run()
+    
+DisplayFractal(ns.eval())                        
